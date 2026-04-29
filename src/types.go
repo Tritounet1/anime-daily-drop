@@ -1,0 +1,32 @@
+package scrape
+
+import "time"
+
+type Response struct {
+	Data []Anime `json:"data"`
+}
+
+type Anime struct {
+	Title     string    `json:"title"`
+	Images    Images    `json:"images"`
+	Broadcast Broadcast `json:"broadcast"`
+}
+
+type Images struct {
+	JPG struct {
+		LargeURL string `json:"large_image_url"`
+	} `json:"jpg"`
+}
+
+type Broadcast struct {
+	Day  string `json:"day"`
+	Time string `json:"time"`
+}
+
+type Entry struct {
+	Title  string
+	Date   time.Time
+	Day    string
+	Time   string
+	ImgURL string
+}

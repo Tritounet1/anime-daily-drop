@@ -1,0 +1,6 @@
+services:
+  anime-schedule:
+    build: .
+    volumes:
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
