@@ -17,15 +17,15 @@ func main() {
 		mode = strings.ToLower(os.Args[1])
 	}
 
-	// ── Mode schedule ──────────────────────────────
+	// Mode schedule
 	if mode == "schedule" {
 		webhookURL := scrape.GetEnv("DISCORD_WEBHOOK", ".env")
 		if webhookURL == "" {
-			log.Fatal("DISCORD_WEBHOOK manquant (variable d'environnement ou .env)")
+			log.Fatal("DISCORD_WEBHOOK environment variable is missing.")
 		}
 
 		paris, _ := time.LoadLocation("Europe/Paris")
-		log.Println("Scheduler démarré — envoi quotidien à 00:01 (Paris)")
+		log.Println("Scheduler start, next sendind is tomorrow at 00:01 (Paris)")
 
 		for {
 			now := time.Now().In(paris)
@@ -33,16 +33,15 @@ func main() {
 			if !next.After(now) {
 				next = next.AddDate(0, 0, 1)
 			}
-			log.Printf("Prochain envoi : %s", next.Format("2006-01-02 15:04 MST"))
+			log.Printf("Next message sending : %s", next.Format("2006-01-02 15:04 MST"))
 			time.Sleep(time.Until(next))
 
-			if err := sendToday(webhookURL); err != nil {
-				log.Printf("Erreur envoi Discord : %v", err)
+			if err := sendTodayAnimesToDiscord(webhookURL); err != nil {
+				log.Printf("Error while sending to : %v", err)
 			}
 		}
 	}
 
-	// ── Fetch + tri (modes terminal et discord) ───────────────────
 	entries, err := scrape.FetchSeason()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Erreur API: %v\n", err)
@@ -55,7 +54,7 @@ func main() {
 	paris, _ := time.LoadLocation("Europe/Paris")
 	todayStr := scrape.DaysFR[time.Now().In(paris).Weekday().String()]
 
-	// ── Mode Discord ──────────────────────────────────────────────
+	// Mode Discord (sans scheduler)
 	if mode == "discord" {
 		webhookURL := scrape.GetEnv("DISCORD_WEBHOOK", ".env")
 		if webhookURL == "" {
@@ -84,7 +83,7 @@ func main() {
 		return
 	}
 
-	// ── Mode terminal ─────────────────────────────────────────────
+	// Mode terminal
 	var toShow []scrape.Entry
 	for _, e := range entries {
 		if mode == "today" && e.Day != todayStr {
@@ -105,7 +104,7 @@ func main() {
 }
 
 // sendToday récupère les animes du jour et les envoie sur Discord.
-func sendToday(webhookURL string) error {
+func sendTodayAnimesToDiscord(webhookURL string) error {
 	entries, err := scrape.FetchSeason()
 	if err != nil {
 		return err
@@ -127,6 +126,6 @@ func sendToday(webhookURL string) error {
 	if err := scrape.SendDiscord(webhookURL, toSend, todayStr); err != nil {
 		return err
 	}
-	log.Printf("✓ %d anime(s) envoyé(s) sur Discord", len(toSend))
+	log.Printf("✓ %d anime(s) send to Discord", len(toSend))
 	return nil
 }

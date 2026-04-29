@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	ColorToday  = 0xFFD700 // or — anime du jour
+	ColorToday  = 0xFFD700 // couleur or pour les animes du jour
 	ColorFuture = 0x5865F2 // Discord blurple
 )
 
@@ -34,8 +34,8 @@ type discordPayload struct {
 	Embeds  []discordEmbed `json:"embeds"`
 }
 
-// GetEnv retourne la valeur d'une variable : os.Getenv en priorité (Docker/Dokploy),
-// puis fallback sur le fichier .env pour le dev local.
+// GetEnv retourne la valeur d'une variable : os.Getenv en priorité pour Docker et Dokploy,
+// puis si on trouve pas on regarde le fichier .env (pour le dev local).
 func GetEnv(key, envFile string) string {
 	if val := os.Getenv(key); val != "" {
 		return val
@@ -81,7 +81,7 @@ func SendDiscord(webhookURL string, entries []Entry, todayStr string) error {
 		embeds = append(embeds, em)
 	}
 
-	// Discord limite à 10 embeds par message.
+	// Discord est limité à 10 embeds par message.
 	for i := 0; i < len(embeds); i += 10 {
 		end := i + 10
 		if end > len(embeds) {

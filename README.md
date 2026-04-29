@@ -1,10 +1,10 @@
 # anime-schedule
 
-Programme en Go pour afficher le planning des animes de la saison en cours, avec envoie du planning sur Discord (Webhook).
+Programme en Go pour récupérer le planning des animes de la saison en cours, avec envoie du planning sur Discord (Webhook) ou accessible dans le terminal.
 
 ## Fonctionnement
 
-Le programme interroge l'API **[Jikan v4](https://jikan.moe/)** — un wrapper non-officiel de [MyAnimeList](https://myanimelist.net/) — pour récupérer les animes diffusés cette saison. Les horaires de diffusion sont en JST (heure japonaise) et sont automatiquement convertis en heure de Paris (CET/CEST).
+Le programme utilise l'API **[Jikan v4](https://jikan.moe/)** — un wrapper non-officiel de [MyAnimeList](https://myanimelist.net/), pour récupérer les animes diffusés cette saison. Les horaires de diffusion sont en JST (heure japonaise) et sont automatiquement convertis en heure de Paris (CET/CEST).
 
 Endpoint utilisé : `GET https://api.jikan.moe/v4/seasons/now`
 
@@ -32,6 +32,7 @@ DISCORD_WEBHOOK="https://discord.com/api/webhooks/..."
 ```
 
 Le webhook envoie un embed par anime avec l'image en haute résolution, le jour et l'heure de diffusion (Paris).
+
 Les animes du jour sont mis en couleur or, les autres en bleu.
 
 ## Exemple de notification discord
