@@ -34,11 +34,15 @@ type discordPayload struct {
 	Embeds  []discordEmbed `json:"embeds"`
 }
 
-func LoadEnv(path string) map[string]string {
-	env := map[string]string{}
-	data, err := os.ReadFile(path)
+// GetEnv retourne la valeur d'une variable : os.Getenv en priorité (Docker/Dokploy),
+// puis fallback sur le fichier .env pour le dev local.
+func GetEnv(key, envFile string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	data, err := os.ReadFile(envFile)
 	if err != nil {
-		return env
+		return ""
 	}
 	for _, line := range strings.Split(string(data), "\n") {
 		line = strings.TrimSpace(line)
@@ -49,9 +53,11 @@ func LoadEnv(path string) map[string]string {
 		if !ok {
 			continue
 		}
-		env[strings.TrimSpace(k)] = strings.Trim(strings.TrimSpace(v), `"'`)
+		if strings.TrimSpace(k) == key {
+			return strings.Trim(strings.TrimSpace(v), `"'`)
+		}
 	}
-	return env
+	return ""
 }
 
 func SendDiscord(webhookURL string, entries []Entry, todayStr string) error {

@@ -19,10 +19,9 @@ func main() {
 
 	// ── Mode schedule ──────────────────────────────
 	if mode == "schedule" {
-		env := scrape.LoadEnv(".env")
-		webhookURL := env["DISCORD_WEBHOOK"]
+		webhookURL := scrape.GetEnv("DISCORD_WEBHOOK", ".env")
 		if webhookURL == "" {
-			log.Fatal("DISCORD_WEBHOOK manquant dans .env")
+			log.Fatal("DISCORD_WEBHOOK manquant (variable d'environnement ou .env)")
 		}
 
 		paris, _ := time.LoadLocation("Europe/Paris")
@@ -58,10 +57,9 @@ func main() {
 
 	// ── Mode Discord ──────────────────────────────────────────────
 	if mode == "discord" {
-		env := scrape.LoadEnv(".env")
-		webhookURL := env["DISCORD_WEBHOOK"]
+		webhookURL := scrape.GetEnv("DISCORD_WEBHOOK", ".env")
 		if webhookURL == "" {
-			fmt.Fprintln(os.Stderr, "DISCORD_WEBHOOK manquant dans .env")
+			fmt.Fprintln(os.Stderr, "DISCORD_WEBHOOK manquant (variable d'environnement ou .env)")
 			os.Exit(1)
 		}
 
