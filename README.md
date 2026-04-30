@@ -1,4 +1,4 @@
-# anime-schedule
+# Anime Daily Drop
 
 Programme en Go pour récupérer le planning des animes de la saison en cours, avec envoie du planning sur Discord (Webhook) ou accessible dans le terminal.
 

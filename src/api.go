@@ -18,6 +18,13 @@ var weekdayMap = map[string]time.Weekday{
 	"Fridays": time.Friday, "Saturdays": time.Saturday,
 }
 
+func formatTitle(original, english string) string {
+	if english == "" || english == original {
+		return original
+	}
+	return english + " | " + original
+}
+
 func FetchSeason() ([]Entry, error) {
 	resp, err := http.Get("https://api.jikan.moe/v4/seasons/now")
 	if err != nil {
@@ -43,7 +50,7 @@ func FetchSeason() ([]Entry, error) {
 		date, day, t := GetNextAiring(a.Broadcast.Day, a.Broadcast.Time)
 		if !date.IsZero() {
 			entries = append(entries, Entry{
-				Title:  a.Title,
+				Title:  formatTitle(a.Title, a.TitleEnglish),
 				Date:   date,
 				Day:    day,
 				Time:   t,

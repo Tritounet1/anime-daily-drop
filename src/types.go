@@ -7,9 +7,10 @@ type Response struct {
 }
 
 type Anime struct {
-	Title     string    `json:"title"`
-	Images    Images    `json:"images"`
-	Broadcast Broadcast `json:"broadcast"`
+	Title        string    `json:"title"`
+	TitleEnglish string    `json:"title_english"`
+	Images       Images    `json:"images"`
+	Broadcast    Broadcast `json:"broadcast"`
 }
 
 type Images struct {
