@@ -7,6 +7,7 @@ type Response struct {
 }
 
 type Anime struct {
+	MalID        int       `json:"mal_id"`
 	Title        string    `json:"title"`
 	TitleEnglish string    `json:"title_english"`
 	Images       Images    `json:"images"`

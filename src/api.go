@@ -43,10 +43,12 @@ func FetchSeason() ([]Entry, error) {
 	}
 
 	var entries []Entry
+	seen := make(map[int]bool)
 	for _, a := range result.Data {
-		if a.Broadcast.Day == "" {
+		if a.Broadcast.Day == "" || seen[a.MalID] {
 			continue
 		}
+		seen[a.MalID] = true
 		date, day, t := GetNextAiring(a.Broadcast.Day, a.Broadcast.Time)
 		if !date.IsZero() {
 			entries = append(entries, Entry{

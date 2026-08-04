@@ -1,40 +1,29 @@
 package scrape
 
 import (
-	"fmt"
-	"strings"
-	"text/tabwriter"
 	"os"
-)
 
-const (
-	Reset  = "\033[0m"
-	Cyan   = "\033[36m"
-	Green  = "\033[32m"
-	Yellow = "\033[33m"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 )
 
 func PrintTable(entries []Entry, todayStr string) {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(w, "%sTITLE%s\t%sDAY%s\t%sTIME%s\n", Cyan, Reset, Cyan, Reset, Cyan, Reset)
-	fmt.Fprintln(w, strings.Repeat("─", 10)+"\t"+strings.Repeat("─", 10)+"\t"+strings.Repeat("─", 4))
-	for _, e := range entries {
-		color := Green
-		if e.Day == todayStr {
-			color = Yellow
-		}
-		fmt.Fprintf(w, "%s%s%s\t%s%s%s\t%s\n",
-			Cyan, e.Title, Reset,
-			color, e.Day, Reset,
-			e.Time)
-	}
-	w.Flush()
-}
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.SetStyle(table.StyleRounded)
+	t.Style().Options.SeparateRows = true
+	t.AppendHeader(table.Row{"Title", "Day", "Time"})
+	t.SetColumnConfigs([]table.ColumnConfig{
+		{Number: 1, WidthMax: 70, WidthMaxEnforcer: text.WrapSoft},
+	})
 
-func Truncate(s string, max int) string {
-	r := []rune(s)
-	if len(r) <= max {
-		return s
+	for _, e := range entries {
+		day := text.Colors{text.FgGreen}.Sprint(e.Day)
+		if e.Day == todayStr {
+			day = text.Colors{text.FgYellow, text.Bold}.Sprint(e.Day)
+		}
+		t.AppendRow(table.Row{e.Title, day, e.Time})
 	}
-	return string(r[:max-1]) + "…"
+
+	t.Render()
 }
