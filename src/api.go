@@ -2,8 +2,10 @@ package scrape
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -26,41 +28,94 @@ func formatTitle(original, english string) string {
 }
 
 func FetchSeason() ([]Entry, error) {
-	resp, err := http.Get("https://api.jikan.moe/v4/seasons/now")
+	var entries []Entry
+	seen := make(map[int]bool)
+
+	for page := 1; ; page++ {
+		result, err := fetchSeasonPage(page)
+		if err != nil {
+			// Jikan's seasons/now endpoint is prone to sustained upstream
+			// timeouts on deeper pages. Fail hard only if we have nothing
+			// at all; otherwise return what was fetched so far rather than
+			// discarding already-successful pages.
+			if page == 1 {
+				return nil, err
+			}
+			fmt.Fprintf(os.Stderr, "Attention: liste possiblement incomplète (%v)\n", err)
+			break
+		}
+
+		for _, a := range result.Data {
+			if a.Broadcast.Day == "" || seen[a.MalID] {
+				continue
+			}
+			seen[a.MalID] = true
+			date, day, t := GetNextAiring(a.Broadcast.Day, a.Broadcast.Time)
+			if !date.IsZero() {
+				entries = append(entries, Entry{
+					Title:  formatTitle(a.Title, a.TitleEnglish),
+					Date:   date,
+					Day:    day,
+					Time:   t,
+					ImgURL: a.Images.JPG.LargeURL,
+				})
+			}
+		}
+
+		if !result.Pagination.HasNextPage {
+			break
+		}
+		// Jikan rate-limits to 3 req/s.
+		time.Sleep(400 * time.Millisecond)
+	}
+
+	return entries, nil
+}
+
+// fetchSeasonPage fetches one page, retrying on transient errors: Jikan's
+// seasons/now endpoint frequently returns 429 (rate limit) or 5xx (upstream
+// MAL timeout) on deeper pages even at a moderate request rate.
+func fetchSeasonPage(page int) (Response, error) {
+	const maxAttempts = 4
+	var lastErr error
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		result, retryable, err := doFetchSeasonPage(page)
+		if err == nil {
+			return result, nil
+		}
+		lastErr = err
+		if !retryable || attempt == maxAttempts {
+			break
+		}
+		time.Sleep(time.Duration(attempt) * time.Second)
+	}
+	return Response{}, fmt.Errorf("page %d: %w", page, lastErr)
+}
+
+func doFetchSeasonPage(page int) (result Response, retryable bool, err error) {
+	resp, err := http.Get(fmt.Sprintf("https://api.jikan.moe/v4/seasons/now?page=%d", page))
 	if err != nil {
-		return nil, err
+		return Response{}, true, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return Response{}, true, err
 	}
 
-	var result Response
+	if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= http.StatusInternalServerError {
+		return Response{}, true, fmt.Errorf("http %s", resp.Status)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return Response{}, false, fmt.Errorf("http %s", resp.Status)
+	}
+
 	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, err
+		return Response{}, false, err
 	}
-
-	var entries []Entry
-	seen := make(map[int]bool)
-	for _, a := range result.Data {
-		if a.Broadcast.Day == "" || seen[a.MalID] {
-			continue
-		}
-		seen[a.MalID] = true
-		date, day, t := GetNextAiring(a.Broadcast.Day, a.Broadcast.Time)
-		if !date.IsZero() {
-			entries = append(entries, Entry{
-				Title:  formatTitle(a.Title, a.TitleEnglish),
-				Date:   date,
-				Day:    day,
-				Time:   t,
-				ImgURL: a.Images.JPG.LargeURL,
-			})
-		}
-	}
-	return entries, nil
+	return result, false, nil
 }
 
 // GetNextAiring converts a JST broadcast slot to the next upcoming Paris time.

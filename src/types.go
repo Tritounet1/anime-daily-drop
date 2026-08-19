@@ -3,7 +3,12 @@ package scrape
 import "time"
 
 type Response struct {
-	Data []Anime `json:"data"`
+	Data       []Anime    `json:"data"`
+	Pagination Pagination `json:"pagination"`
+}
+
+type Pagination struct {
+	HasNextPage bool `json:"has_next_page"`
 }
 
 type Anime struct {
